@@ -1,0 +1,90 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+venv_*/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Audio files
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.aac
+
+# Model files and checkpoints
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+checkpoints/
+models/
+weights/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# Data and outputs
+data/
+datasets/
+outputs/
+results/
+logs/
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# System files
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+
+# Environment variables
+.env
+.env.local
+
+# Cache
+.cache/
+*.cache
+
+# Benchmark and test outputs
+benchmark_results.json
+test_outputs/
+benchmark_test/
+config.yaml
