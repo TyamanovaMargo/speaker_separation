@@ -88,3 +88,4 @@ benchmark_results.json
 test_outputs/
 benchmark_test/
 config.yaml
+input /samples_of_low_quality_after_light_diarization/

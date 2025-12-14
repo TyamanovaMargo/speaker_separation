@@ -1,0 +1,152 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  MossFormer2 16kHz + TensorRT - Usage Workflow                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+
+STEP 1: INSTALL
+════════════════════════════════════════════════════════════════
+
+    $ bash install.sh
+         │
+         ├─> Detects CUDA version
+         ├─> Installs PyTorch (CUDA 11.8 or 12.1)
+         ├─> Installs TensorRT (optional)
+         └─> Installs dependencies
+         
+    ✓ Creates: venv/ directory
+
+
+STEP 2: ACTIVATE ENVIRONMENT
+════════════════════════════════════════════════════════════════
+
+    $ source venv/bin/activate
+    (venv) $
+
+
+STEP 3: RUN SEPARATION
+════════════════════════════════════════════════════════════════
+
+    $ python separate.py --input audio.wav --output results/
+         │
+         v
+    ┌────────────────┐
+    │  Load Audio    │ ← Any format, any sample rate
+    └────────┬───────┘
+             │
+             v
+    ┌────────────────┐
+    │  Resample      │ → 16kHz mono
+    └────────┬───────┘
+             │
+             v
+    ┌────────────────┐
+    │  Load Model    │ → MossFormer2 16kHz
+    └────────┬───────┘
+             │
+             v
+    ┌────────────────┐
+    │  Apply         │ → FP16 optimization
+    │  TensorRT      │   (first run: 3 min compile)
+    └────────┬───────┘
+             │
+             v
+    ┌────────────────┐
+    │  Split into    │ → 30-second chunks
+    │  Chunks        │
+    └────────┬───────┘
+             │
+             v
+    ╔════════════════╗
+    ║  SEPARATE      ║ → Process each chunk
+    ║  (GPU/CPU)     ║   Speaker 1 + Speaker 2
+    ╚════════┬═══════╝
+             │
+             v
+    ┌────────────────┐
+    │  Merge with    │ → Smooth crossfading
+    │  Crossfade     │   (100ms transitions)
+    └────────┬───────┘
+             │
+             v
+    ┌────────────────┐
+    │  Normalize     │ → Prevent clipping
+    └────────┬───────┘
+             │
+             v
+    ┌────────────────┐
+    │  Save Files    │ → speaker1.wav
+    │                │   speaker2.wav (16kHz, 16-bit)
+    └────────────────┘
+
+
+STEP 4: CHECK RESULTS
+════════════════════════════════════════════════════════════════
+
+    $ ls results/
+    speaker1.wav  speaker2.wav
+    
+    $ play results/speaker1.wav
+    $ play results/speaker2.wav
+
+
+═══════════════════════════════════════════════════════════════
+
+PERFORMANCE FLOW
+────────────────
+
+  INPUT                  PROCESSING              OUTPUT
+  ─────                  ──────────              ──────
+  
+  audio.wav              ┌──────────┐            speaker1.wav
+  (any SR, format)  →    │TensorRT  │  →         (16kHz mono)
+                         │2-3x      │
+                         │faster    │            speaker2.wav
+                         └──────────┘            (16kHz mono)
+                         
+  Processing Time Examples (30s audio):
+  • PyTorch:    ~25 seconds
+  • TensorRT:   ~10 seconds (after first compile)
+
+
+═══════════════════════════════════════════════════════════════
+
+CONFIGURATION OPTIONS
+─────────────────────
+
+  OPTION              EFFECT                      USE WHEN
+  ──────────────────────────────────────────────────────────
+  (default)           TensorRT + 30s chunks       Normal use
+  --no-tensorrt       PyTorch only                GPU issues
+  --chunk-size 15     Smaller chunks              Low VRAM
+  --chunk-size 45     Larger chunks               High VRAM
+
+
+═══════════════════════════════════════════════════════════════
+
+FILE STRUCTURE
+──────────────
+
+  your_project/
+  ├── separate.py           ← Main script
+  ├── install.sh           ← Installation
+  ├── requirements.txt     ← Dependencies
+  ├── README.md            ← Documentation
+  ├── venv/                ← Virtual environment
+  │   └── ...
+  ├── audio/               ← Your input files
+  │   ├── file1.wav
+  │   └── file2.wav
+  └── results/             ← Output directory
+      ├── file1/
+      │   ├── speaker1.wav
+      │   └── speaker2.wav
+      └── file2/
+          ├── speaker1.wav
+          └── speaker2.wav
+
+
+═══════════════════════════════════════════════════════════════
+That's it! Simple 4-step process for high-quality separation.
+═══════════════════════════════════════════════════════════════

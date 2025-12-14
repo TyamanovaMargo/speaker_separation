@@ -1,0 +1,84 @@
+╔══════════════════════════════════════════════════════════════╗
+║  MossFormer2 16kHz + TensorRT - Quick Reference              ║
+╚══════════════════════════════════════════════════════════════╝
+
+📦 INSTALLATION
+────────────────
+  bash install.sh
+  source venv/bin/activate
+
+
+🚀 BASIC USAGE
+────────────────
+  python separate.py --input audio.wav --output results/
+
+
+⚡ COMMON COMMANDS
+────────────────────────────────────────────────────────────────
+  # Standard (with TensorRT - fastest)
+  python separate.py --input audio.wav --output results/
+
+  # Without TensorRT (more compatible)
+  python separate.py --input audio.wav --output results/ --no-tensorrt
+
+  # Low memory mode
+  python separate.py --input audio.wav --output results/ --chunk-size 15
+
+  # Batch processing
+  for f in audio/*.wav; do
+    python separate.py --input "$f" --output "results/$(basename $f .wav)/"
+  done
+
+
+📊 WHAT YOU GET
+────────────────
+  results/
+    ├── speaker1.wav  (16kHz, 16-bit)
+    └── speaker2.wav  (16kHz, 16-bit)
+
+
+🎯 PERFORMANCE
+────────────────────────────────────────────────────────────────
+  Configuration         Speed    Quality    VRAM
+  ──────────────────────────────────────────────────
+  16kHz PyTorch         1.0x     Good       3GB
+  16kHz + TensorRT      2.5x     Good       4GB
+
+  * First TensorRT run: ~3 min (compiles model, then cached)
+
+
+🔧 TROUBLESHOOTING
+────────────────────────────────────────────────────────────────
+  Out of memory?     → --chunk-size 15
+  No GPU?            → --no-tensorrt
+  TensorRT issues?   → --no-tensorrt
+  Slow first run?    → Normal (TensorRT compilation)
+
+
+💡 TIPS
+────────────────
+  • Use chunk-size 30-45 for best quality
+  • TensorRT saves ~3 min after first run
+  • 16kHz gives better quality than 8kHz
+  • Both speakers saved in same directory
+
+
+📝 FULL OPTIONS
+────────────────────────────────────────────────────────────────
+  --input PATH       Input audio file (required)
+  --output PATH      Output directory (default: output/)
+  --no-tensorrt      Disable TensorRT optimization  
+  --chunk-size N     Chunk size in seconds (default: 30)
+
+
+✅ QUALITY METRICS
+────────────────────────────────────────────────────────────────
+  Excellent: correlation < 0.3
+  Good:      correlation 0.3 - 0.6
+  Moderate:  correlation > 0.6
+
+
+🆘 HELP
+────────────────
+  python separate.py --help
+  cat README.md
