@@ -1,0 +1,77 @@
+# =============================================================================
+# Docker Compose for ClearerVoice-Studio Speaker Separation
+# =============================================================================
+#
+# Usage:
+#   docker-compose up --build              # Build and run with default settings
+#   docker-compose run separation --help   # Show help
+#   docker-compose run separation -i /input/audio.wav -o /output/
+#
+# =============================================================================
+
+version: '3.8'
+
+services:
+  separation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # Enable GPU access (NVIDIA)
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    
+    # Mount volumes for input/output
+    volumes:
+      - ./input:/app/input:ro          # Input audio files (read-only)
+      - ./output_batch:/app/results    # Main output directory
+      - ./checkpoints:/app/checkpoints # Model checkpoints
+      - ./config:/app/config           # Config files
+      - ./models:/app/.cache           # Cache models between runs
+    
+    # Environment variables
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HF_HOME=/app/.cache/huggingface
+      - TORCH_HOME=/app/.cache/torch
+    
+    # Working directory
+    working_dir: /app/ClearerVoice-Studio/clearvoice
+    
+    # Default command (can be overridden)
+    command: ["python", "separate_tensorrt_improved.py", "--help"]
+
+  # Batch processing service
+  batch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    
+    volumes:
+      - ./input:/app/input:ro
+      - ./output:/app/output
+      - ./models:/app/.cache
+    
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HF_HOME=/app/.cache/huggingface
+      - TORCH_HOME=/app/.cache/torch
+    
+    working_dir: /app/ClearerVoice-Studio/clearvoice
+    
+    # Process all files in input directory
+    command: >
+      python separate_tensorrt_improved.py 
+      --input-dir /app/input 
+      --output /app/output
+      --opt 3
