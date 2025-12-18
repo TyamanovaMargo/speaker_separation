@@ -1,8 +1,8 @@
 # Modular Speaker Separation Pipeline
 
-**Complete modular pipeline with MossFormer2 separation**
+**Complete modular pipeline with MossFormer2 separation and ClearerVoice-Studio integration**
 
-Run each preprocessing step independently + MossFormer2 speaker separation.
+Run each preprocessing step independently, use MossFormer2 for separation, or leverage the new ClearerVoice-Studio models for even clearer results.
 
 Perfect for experimenting, debugging, and getting high-quality 2-speaker separation.
 
@@ -10,9 +10,10 @@ Perfect for experimenting, debugging, and getting high-quality 2-speaker separat
 
 ## 🎯 What You Get
 
-✅ **6 independent preprocessing steps** (run each separately)
-✅ **MossFormer2 separation** (state-of-the-art 2-speaker separation)
-✅ **Complete pipeline** (preprocess + separate in one command)
+✅ **6 independent preprocessing steps** (run each separately)  
+✅ **MossFormer2 separation** (state-of-the-art 2-speaker separation)  
+✅ **ClearerVoice-Studio integration** (advanced enhancement and separation, 16kHz/48kHz)  
+✅ **Complete pipeline** (preprocess + separate in one command)  
 ✅ **Full control** (customize every step)
 
 ---
@@ -34,6 +35,11 @@ speaker_separation_pipeline_modular/
 ├── config/
 │   ├── config.yaml                Settings
 │   └── requirements.txt           Dependencies
+│
+├── ClearerVoice-Studio/           ClearerVoice models and scripts
+│   └── clearvoice/
+│       ├── separate_clearvoice.py     # 16kHz separation/enhancement
+│       └── separate_clearvoice_48k.py # 48kHz full pipeline
 │
 └── scripts/
     ├── preprocess/                6 preprocessing steps
@@ -61,7 +67,9 @@ bash install.sh
 source venv/bin/activate
 ```
 
-### 2. Complete Pipeline (Preprocess + Separate)
+---
+
+### 2. Run the Complete Modular Pipeline (Preprocess + Separate)
 
 ```bash
 python complete_pipeline.py \
@@ -78,6 +86,8 @@ results/tafdenok/
     ├── speaker1.wav
     └── speaker2.wav
 ```
+
+---
 
 ### 3. Or Run Steps Separately
 
@@ -96,324 +106,107 @@ python scripts/separation/mossformer2_separate.py \
 
 ---
 
-## 📋 Preprocessing Steps Explained
+## 🗣️ Using ClearerVoice-Studio for Even Clearer Results
 
-### **Step 1: Audio Diagnostics** 
-**What it does:** Analyzes audio quality and detects issues
-**Output:** JSON file with metrics
+### 1. 16kHz Separation/Enhancement
 
 ```bash
-python scripts/preprocess/01_audio_diagnostics.py --input audio.wav
+cd ClearerVoice-Studio/clearvoice
+# (optional) pip install -r ../requirements.txt
+
+# Basic separation (2 speakers, 16kHz)
+python separate_clearvoice.py --input /path/to/audio.wav --output results/
+
+# Enhance first, then separate (for noisy audio)
+python separate_clearvoice.py --input /path/to/audio.wav --output results/ --enhance-first
+
+# Batch process a folder
+python separate_clearvoice.py --input-dir /path/to/folder --output results/
+```
+cd ~/Desktop/speaker_separation/ClearerVoice-Studio/clearvoice
+
+# Basic (TensorRT, fastest)
+python separate_tensorrt_full.py -i audio.wav -o results/
+
+# Batch process folder
+python separate_tensorrt_full.py --input-dir "../../input/samples_of_low_quality_after_light_diarization/" -o /home/margo/Desktop/speaker_separation/results/marlibs_trt
+
+# With enhancement for noisy audio
+python separate_tensorrt_full.py --input-dir folder/ -o results/ --enhance-first
+
+# Custom chunk size for very long audio
+python separate_tensorrt_full.py -i long_audio.wav -o results/ --chunk-sec 60 --overlap-sec 3
+
+
+
+## New Features
+
+### 1. Chunked Processing
+```
+Audio: [====|====|====|====]
+        chunk1  chunk2  chunk3
+              ↘↙      ↘↙
+           overlap  overlap
+```
+- Processes long audio in 30-second chunks
+- 2-second overlap prevents boundary artifacts
+
+### 2. Crossfade Merging
+```
+Chunk 1: ━━━━━━━━━╲
+Chunk 2:          ╱━━━━━━━━━
+Result:  ━━━━━━━━━━━━━━━━━━━
+              ↑
+         smooth blend
 ```
 
-**Metrics analyzed:**
-- Sample rate
-- SNR (Signal-to-Noise Ratio)
-- Clipping detection
-- Power line hum (50/60/100/120 Hz)
-- Dynamic range
-- Overall quality assessment
-
-**Output example:**
+### 3. Quality Metrics
 ```
-AUDIO DIAGNOSTICS
-================================================================================
-
-Loading: audio.wav
-  Sample rate: 44100 Hz
-  Duration: 45.23 seconds
-
-1. Peak Amplitude: 0.9823
-   ✓ No clipping
-
-2. Signal-to-Noise Ratio: 12.34 dB
-   ⚙️  MODERATE SNR - Acceptable quality
-
-3. Hum/Buzz Detection:
-   ⚠️  HUM DETECTED at: [60, 120] Hz
-
-4. Dynamic Range: 18.45 dB
-
-OVERALL ASSESSMENT
-Quality: MODERATE ⚙️
-Recommendation: Use 'bad' quality mode (default)
-Issues found: Power line hum
+📊 Quality:
+   • Speaker correlation: 0.142 (lower = better)
+   • Energy ratio: 0.87
+   • Rating: Excellent
 ```
+
+### 4. Proper Output Naming
+```
+input: meeting_audio.mp3
+output:
+  └── meeting_audio/
+      ├── meeting_audio_speaker1.wav
+      └── meeting_audio_speaker2.wav
+
+
+
+**Other modes:**
+- Enhance only: `--mode enhance`
+- Separate only: `--mode separate`
+- Super-res only: `--mode super-res`
 
 ---
 
-### **Step 2: Resample**
-**What it does:** Converts audio to target sample rate (default 16kHz)
+## 📝 Tips
 
-```bash
-python scripts/preprocess/02_resample.py \
-    --input audio.wav \
-    --output resampled.wav \
-    --sr 16000
-```
-
-**Why needed:** Most speech models work best at 16kHz
-
----
-
-### **Step 3: Declipping**
-**What it does:** Repairs clipped/distorted audio using interpolation
-
-```bash
-python scripts/preprocess/03_declip.py \
-    --input audio.wav \
-    --output declipped.wav \
-    --threshold 0.95
-```
-
-**When to use:** If Step 1 detects clipping
-
----
-
-### **Step 4: Hum Removal**
-**What it does:** Removes power line interference (50Hz, 60Hz, harmonics)
-
-```bash
-python scripts/preprocess/04_remove_hum.py \
-    --input audio.wav \
-    --output dehum.wav \
-    --freq 50 60 100 120
-```
-
-**When to use:** If Step 1 detects hum
-
----
-
-### **Step 5: Noise Reduction**
-**What it does:** Reduces background noise using spectral subtraction
-
-```bash
-python scripts/preprocess/05_denoise.py \
-    --input audio.wav \
-    --output denoised.wav \
-    --strength 0.8
-```
-
-**Parameters:**
-- `--strength`: 0.0 to 1.0 (higher = more aggressive)
-
----
-
-### **Step 6: Normalize**
-**What it does:** Normalizes audio amplitude to prevent clipping
-
-```bash
-python scripts/preprocess/06_normalize.py \
-    --input audio.wav \
-    --output normalized.wav \
-    --level -3
-```
-
-**Why needed:** Ensures consistent levels for downstream processing
-
----
-
-## 🎯 Usage Scenarios
-
-### **Scenario 1: Test Each Step**
-
-Run each step individually to see the effect:
-
-```bash
-mkdir -p output
-
-# Original audio
-cp input.wav output/00_original.wav
-
-# Step by step
-python scripts/preprocess/01_audio_diagnostics.py --input output/00_original.wav
-python scripts/preprocess/02_resample.py --input output/00_original.wav --output output/01_resampled.wav
-python scripts/preprocess/03_declip.py --input output/01_resampled.wav --output output/02_declipped.wav
-python scripts/preprocess/04_remove_hum.py --input output/02_declipped.wav --output output/03_dehum.wav
-python scripts/preprocess/05_denoise.py --input output/03_dehum.wav --output output/04_denoised.wav
-python scripts/preprocess/06_normalize.py --input output/04_denoised.wav --output output/05_normalized.wav
-
-# Compare results by listening to each file
-```
-
----
-
-### **Scenario 2: Run Only Specific Steps**
-
-```bash
-# Only run diagnostics and denoising
-python scripts/preprocess/run_all.py \
-    --input audio.wav \
-    --output_dir output/ \
-    --steps 1 5
-```
-
----
-
-### **Scenario 3: Skip Certain Steps**
-
-```bash
-# Run all except declipping and hum removal
-python scripts/preprocess/run_all.py \
-    --input audio.wav \
-    --output_dir output/ \
-    --skip 3 4
-```
-
----
-
-### **Scenario 4: Experiment with Parameters**
-
-```bash
-# Try different denoising strengths
-python scripts/preprocess/05_denoise.py --input audio.wav --output denoised_light.wav --strength 0.3
-python scripts/preprocess/05_denoise.py --input audio.wav --output denoised_medium.wav --strength 0.6
-python scripts/preprocess/05_denoise.py --input audio.wav --output denoised_heavy.wav --strength 0.9
-
-# Compare results
-```
-
----
-
-## 💡 For Your File
-
-```bash
-INPUT_FILE="/home/margo/Desktop/separation_voice_model/output/tafdenok.wav"
-
-# Step 1: Analyze quality
-python scripts/preprocess/01_audio_diagnostics.py --input "$INPUT_FILE"
-
-# Step 2: Run all preprocessing
-python scripts/preprocess/run_all.py \
-    --input "$INPUT_FILE" \
-    --output_dir output/tafdenok_preprocessed/
-
-# Check results
-ls -lh output/tafdenok_preprocessed/
-```
+- All scripts support `--help` for usage details.
+- For ClearerVoice-Studio, see the README in `ClearerVoice-Studio/clearvoice/`.
+- You can mix and match: preprocess with modular pipeline, then use ClearerVoice for separation.
 
 ---
 
 ## 🔧 Customization
 
-### Edit Parameters
-
-All default parameters are in `config/config.yaml`:
-
-```yaml
-preprocessing:
-  clipping_threshold: 0.95
-  snr_poor_threshold: 10.0
-  
-  denoise:
-    strength: 0.8
-  
-  hum_removal:
-    frequencies: [50, 60, 100, 120]
-```
-
-### Create Custom Workflow
-
-```bash
-# Example: Only denoise and normalize
-python scripts/preprocess/05_denoise.py --input audio.wav --output temp.wav --strength 0.7
-python scripts/preprocess/06_normalize.py --input temp.wav --output final.wav --level -3
-```
+- Edit parameters in `config/config.yaml`
+- See each script's `--help` for more options
 
 ---
 
-## 📊 Output Files
+## 📖 Documentation
 
-When running `run_all.py`:
-
-```
-output_dir/
-├── diagnostics.json           Step 1 output (metrics)
-├── step2_resampled.wav       Step 2 output
-├── step3_declipped.wav       Step 3 output
-├── step4_dehum.wav           Step 4 output
-├── step5_denoised.wav        Step 5 output
-├── step6_normalized.wav      Step 6 output
-└── preprocessed_final.wav    Final result (copy of last step)
-```
+- [INSTALL.md](INSTALL.md): Installation instructions
+- [USAGE_GUIDE.md](USAGE_GUIDE.md): Step-by-step usage and examples
+- [MOSSFORMER2_GUIDE.md](MOSSFORMER2_GUIDE.md): MossFormer2 details
+- `ClearerVoice-Studio/clearvoice/README.md`: ClearerVoice usage
 
 ---
 
-## 🎓 Benefits of Modular Approach
-
-✅ **Test each step independently**
-✅ **See the effect of each process**
-✅ **Skip unnecessary steps**
-✅ **Experiment with parameters**
-✅ **Debug issues easily**
-✅ **Customize your pipeline**
-✅ **Educational - understand what each step does**
-
----
-
-## 🔍 Troubleshooting
-
-### "noisereduce not installed"
-```bash
-pip install noisereduce
-```
-
-### "Module not found"
-```bash
-# Make sure virtual environment is activated
-source venv/bin/activate
-
-# Reinstall dependencies
-pip install -r config/requirements.txt
-```
-
-### Want to see intermediate results
-```bash
-# Each step saves its output, just listen to the files!
-aplay output/step3_declipped.wav
-aplay output/step5_denoised.wav
-```
-
----
-
-## 🚀 Next Steps
-
-After preprocessing, you can:
-1. Use the final audio for separation (coming soon)
-2. Analyze the improvements using Step 1 diagnostics
-3. Experiment with different parameter combinations
-
----
-
-## 📖 Complete Example
-
-```bash
-#!/bin/bash
-
-# Your audio file
-INPUT="/home/margo/Desktop/separation_voice_model/output/tafdenok.wav"
-OUTPUT_DIR="output/tafdenok"
-
-# Create output directory
-mkdir -p "$OUTPUT_DIR"
-
-# Step 1: Check quality
-echo "Step 1: Analyzing audio quality..."
-python scripts/preprocess/01_audio_diagnostics.py --input "$INPUT"
-
-# Step 2-6: Process
-echo -e "\nStep 2-6: Running preprocessing..."
-python scripts/preprocess/run_all.py \
-    --input "$INPUT" \
-    --output_dir "$OUTPUT_DIR"
-
-# Done
-echo -e "\n✓ Complete! Check results in: $OUTPUT_DIR/"
-ls -lh "$OUTPUT_DIR"
-```
-
----
-
-**That's it! Each preprocessing step is now independent and can be run separately.**
-
-Start with Step 1 to analyze your audio, then run the steps you need! 🎉
+**For questions, see the documentation or

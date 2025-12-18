@@ -1,12 +1,12 @@
 #!/bin/bash
 ################################################################################
-# Installation Script for Modular Audio Preprocessing Pipeline
+# Installation Script for Modular Speaker Separation Pipeline
 ################################################################################
 
 set -e  # Exit on error
 
 echo "================================================================================"
-echo "MODULAR AUDIO PREPROCESSING - INSTALLATION"
+echo "MODULAR SPEAKER SEPARATION - INSTALLATION"
 echo "================================================================================"
 echo ""
 
@@ -57,10 +57,32 @@ pip install numpy scipy librosa soundfile pyyaml tqdm noisereduce
 echo ""
 echo "✓ Core dependencies installed"
 
+# Install extra requirements if present
+if [ -f "config/requirements.txt" ]; then
+    echo ""
+    echo "================================================================================"
+    echo "Installing Additional Requirements from config/requirements.txt"
+    echo "================================================================================"
+    echo ""
+    pip install -r config/requirements.txt
+    echo "✓ Additional requirements installed"
+fi
+
+# Install ClearerVoice-Studio requirements if present
+if [ -f "ClearerVoice-Studio/requirements.txt" ]; then
+    echo ""
+    echo "================================================================================"
+    echo "Installing ClearerVoice-Studio Requirements"
+    echo "================================================================================"
+    echo ""
+    pip install -r ClearerVoice-Studio/requirements.txt
+    echo "✓ ClearerVoice-Studio requirements installed"
+fi
+
 # Ask about PyTorch
 echo ""
 echo "================================================================================"
-echo "PyTorch Installation (Optional - for future ML features)"
+echo "PyTorch Installation (Optional - for separation models)"
 echo "================================================================================"
 echo ""
 echo "Do you want to install PyTorch?"
@@ -136,6 +158,12 @@ try:
 except ImportError:
     print("⚪ torch (optional, not installed)")
 
+try:
+    import clearvoice
+    print("✓ clearvoice (ClearerVoice-Studio)")
+except ImportError:
+    print("⚪ clearvoice (optional, for ClearerVoice-Studio)")
+
 if failed:
     print(f"\n✗ Some required packages failed: {', '.join(failed)}")
     sys.exit(1)
@@ -157,9 +185,12 @@ echo ""
 echo "2. Test with your audio file:"
 echo "   python scripts/preprocess/01_audio_diagnostics.py --input your_audio.wav"
 echo ""
-echo "3. Or use quick start:"
-echo "   bash quick_start.sh"
+echo "3. Try ClearerVoice-Studio separation:"
+echo "   cd ClearerVoice-Studio/clearvoice"
+echo "   python separate_clearvoice.py --input /path/to/audio.wav --output results/"
 echo ""
-echo "4. Read documentation:"
-echo "   cat README.md"
+echo "4. Or use the full modular pipeline:"
+echo "   python complete_pipeline.py --input your_audio.wav --output_dir results/"
 echo ""
+echo "5. Read documentation:"
+echo
