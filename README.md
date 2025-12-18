@@ -1,0 +1,197 @@
+# Speaker Separation Pipeline with ClearerVoice-Studio
+
+**One-click batch processing for 2-speaker separation using ClearerVoice-Studio's TensorRT-improved model**
+
+---
+
+## 🚀 Quick Start
+
+### 1. Install Dependencies
+
+```bash
+bash install.sh
+```
+
+### 2. Place Audio Files
+
+```
+input/
+├── audio1.wav
+├── audio2.wav
+└── ...
+```
+
+### 3. Run Separation
+
+```bash
+bash run.sh
+```
+
+Or specify custom output:
+
+```bash
+bash run.sh input/ custom_output/
+```
+
+---
+
+## 📁 Project Structure
+
+```
+speaker_separation/
+│
+├── run.sh                              # ⚡ One-click batch runner
+├── install.sh                          # Installation script
+├── Dockerfile                          # Docker containerization
+├── docker-compose.yml                  # Docker Compose config
+│
+├── input/                              # 📁 Place your .wav/.WAV files here
+│
+├── results/                            # 📊 Output folder (auto-created)
+│   └── <audio_name>/
+│       ├── speaker1.wav
+│       └── speaker2.wav
+│
+├── ClearerVoice-Studio/                # 🎙️ Main separation engine
+│   └── clearvoice/
+│       ├── separate_tensorrt_improved.py   # ⭐ Core separation script
+│       ├── requirements.txt
+│       └── requirements_tensorrt.txt
+│
+├── config/
+│   └── config.yaml
+│
+├── venv_moss/                          # Python virtual environment
+│
+└── doc/
+    └── README.md
+```
+
+---
+
+## 📊 Output Structure
+
+```
+results/
+├── call_center_audio_1/
+│   ├── speaker1.wav                    # ← Speaker 1
+│   └── speaker2.wav                    # ← Speaker 2
+├── call_center_audio_2/
+│   ├── speaker1.wav
+│   └── speaker2.wav
+└── ...
+```
+
+### Playing Results
+
+```bash
+# Play all results
+play results/*/*.wav
+
+# Play specific audio
+play results/audio_name/speaker1.wav
+```
+
+---
+
+## 🐳 Docker Usage
+
+### Build and Run
+
+```bash
+# Build the image
+docker-compose build
+
+# Run batch processing
+docker-compose run batch
+
+# Or run single file
+docker-compose run separation python separate_tensorrt_improved.py \
+    --input /app/input/audio.wav \
+    --output /app/output/
+```
+
+### Volume Mounts
+
+| Host Path | Container Path | Purpose |
+|-----------|----------------|---------|
+| `./input` | `/app/input` | Input audio files |
+| `./output` | `/app/output` | Output separated speakers |
+| `./models` | `/app/.cache` | Cached models |
+
+---
+
+## 🛠️ Advanced Options
+
+### Virtual Environment
+
+The script automatically uses:
+
+1. `venv_moss` (if exists) — preferred
+2. `venv` (if exists)
+3. Creates new venv via `install.sh` (if neither exists)
+
+### Command Line Options
+
+```
+--input, -i       Input audio file
+--input-dir       Input directory for batch processing
+--output, -o      Output directory (default: output/)
+--opt             Optimization level:
+                    0 = Base PyTorch
+                    1 = FP16 (half precision)
+                    2 = torch.compile
+                    3 = TensorRT (default, fastest)
+--chunk-sec       Chunk size in seconds (default: 30)
+--overlap-sec     Overlap between chunks (default: 2)
+--enhance-first   Apply enhancement before separation
+--output-sr       Output sample rate (default: 16000)
+```
+
+### Requirements
+
+All dependencies are installed by `install.sh`:
+
+- **Core:** numpy, scipy, soundfile, librosa
+- **ClearerVoice-Studio:** From requirements.txt
+- **TensorRT:** From requirements_tensorrt.txt
+
+---
+
+## ⚡ Performance
+
+Approximate speeds on RTX A5000 (24GB):
+
+| Optimization | Speed vs Real-time |
+|--------------|-------------------|
+| Base PyTorch | ~0.5x |
+| FP16 | ~1-1.5x |
+| torch.compile | ~2x |
+| TensorRT | ~3-5x |
+
+---
+
+## 🎙️ About ClearerVoice-Studio
+
+This project uses [ClearerVoice-Studio](https://github.com/modelscope/ClearerVoice-Studio) — an AI-powered speech processing toolkit by Alibaba that provides:
+
+- **Speech Enhancement** — Denoising
+- **Speech Separation** — 2-speaker separation via MossFormer & TensorRT
+- **Speech Super-Resolution** — 16kHz → 48kHz bandwidth extension
+- **Target Speaker Extraction** — Audio-visual and EEG-based
+- **Training & Fine-tuning** — Support for all tasks
+
+### Latest Updates
+
+- **[2025.6]** NumPy array interface for flexible model integration
+- **[2025.5]** Enhanced SpeechScore with NISQA and DISTILL_MOS metrics
+- **[2025.4]** pip install support: `pip install clearvoice`
+- **[2025.4]** Speech super-resolution training scripts
+- **[2025.1]** Multi-format audio support (WAV, MP3, AAC, FLAC, etc.)
+- **[2024.11]** 3M+ uses of FRCRN denoiser, 2.5M+ uses of MossFormer separator
+
+---
+
+## 📝 License
+
+See [ClearerVoice-Studio](https://github.com/modelscope/ClearerVoice-Studio) for license information.
