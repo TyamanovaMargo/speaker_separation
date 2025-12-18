@@ -6,13 +6,7 @@
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
-
-```bash
-bash install.sh
-```
-
-### 2. Place Audio Files
+### 1. Place Audio Files
 
 ```
 input/
@@ -21,16 +15,28 @@ input/
 └── ...
 ```
 
-### 3. Run Separation
+### 2. Build and Run with Docker (Recommended)
 
+#### Requirements
+- **NVIDIA GPU** with drivers and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+- Docker + docker-compose
+- (Optional) Docker Hub login for pulling NVIDIA base images
+
+#### Build the container:
 ```bash
-bash run.sh
+docker-compose build
 ```
 
-Or specify custom output:
-
+#### Batch process all files:
 ```bash
-bash run.sh input/ custom_output/
+docker-compose run separation
+```
+
+#### Process a single file:
+```bash
+docker-compose run separation python separate_tensorrt_improved.py \
+    --input /app/input/audio1.wav \
+    --output /app/results/
 ```
 
 ---
@@ -47,7 +53,7 @@ speaker_separation/
 │
 ├── input/                              # 📁 Place your .wav/.WAV files here
 │
-├── results/                            # 📊 Output folder (auto-created)
+├── output_batch/                       # 📊 Output folder (auto-created)
 │   └── <audio_name>/
 │       ├── speaker1.wav
 │       └── speaker2.wav
@@ -72,7 +78,7 @@ speaker_separation/
 ## 📊 Output Structure
 
 ```
-results/
+output_batch/
 ├── call_center_audio_1/
 │   ├── speaker1.wav                    # ← Speaker 1
 │   └── speaker2.wav                    # ← Speaker 2
@@ -86,10 +92,10 @@ results/
 
 ```bash
 # Play all results
-play results/*/*.wav
+play output_batch/*/*.wav
 
 # Play specific audio
-play results/audio_name/speaker1.wav
+play output_batch/audio_name/speaker1.wav
 ```
 
 ---
@@ -102,22 +108,32 @@ play results/audio_name/speaker1.wav
 # Build the image
 docker-compose build
 
-# Run batch processing
-docker-compose run batch
+# Run batch processing (all files in input/)
+docker-compose run separation
 
-# Or run single file
+# Run on a single file
 docker-compose run separation python separate_tensorrt_improved.py \
-    --input /app/input/audio.wav \
-    --output /app/output/
+    --input /app/input/audio1.wav \
+    --output /app/results/
 ```
 
 ### Volume Mounts
 
-| Host Path | Container Path | Purpose |
-|-----------|----------------|---------|
-| `./input` | `/app/input` | Input audio files |
-| `./output` | `/app/output` | Output separated speakers |
-| `./models` | `/app/.cache` | Cached models |
+| Host Path         | Container Path         | Purpose                |
+|-------------------|-----------------------|------------------------|
+| `./input`         | `/app/input`          | Input audio files      |
+| `./output_batch`  | `/app/results`        | Output separated files |
+| `./checkpoints`   | `/app/checkpoints`    | Model checkpoints      |
+| `./config`        | `/app/config`         | Config files           |
+| `./models`        | `/app/.cache`         | Cached models          |
+
+### GPU Requirements
+- NVIDIA GPU and drivers
+- NVIDIA Container Toolkit (for `runtime: nvidia`)
+
+### Troubleshooting
+- If you get errors about missing `nvidia-smi` or CUDA, check your driver and toolkit installation.
+- The container must be run with GPU access enabled (see docker-compose.yml).
 
 ---
 
