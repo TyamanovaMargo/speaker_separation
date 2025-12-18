@@ -1,0 +1,28 @@
+# Ignore Python cache and venvs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+venv_moss/
+
+# Ignore output and results
+output_batch/
+results/
+checkpoints/
+*.zip
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore user data
+input/data_call_center/
+input/data_credit_analyst/
+input/samples_of_low_quality_after_light_diarization/
+
+# Ignore IDE/project files
+*.swp
+*.swo
+.idea/
+.vscode/
