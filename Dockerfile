@@ -33,9 +33,9 @@ RUN pip install --no-cache-dir \
 # Install torch-tensorrt (compatible with torch 2.0.1)
 RUN pip install --no-cache-dir torch-tensorrt==1.4.0
 
-# Install audio/ML dependencies
+# Install audio/ML dependencies (numpy<2 required for torch 2.0.1 compatibility)
 RUN pip install --no-cache-dir \
-    numpy scipy soundfile librosa tqdm pyyaml \
+    "numpy<2" scipy soundfile librosa tqdm pyyaml \
     transformers huggingface_hub modelscope
 
 # Copy ClearerVoice-Studio
@@ -59,6 +59,9 @@ ENV TORCH_HOME=/app/.cache/torch
 ENV PYTHONPATH="/app/ClearerVoice-Studio:/app/ClearerVoice-Studio/clearvoice:${PYTHONPATH}"
 
 RUN mkdir -p $HF_HOME $TORCH_HOME
+
+# Force numpy 1.x compatibility - MUST be after all other pip installs
+RUN pip install --no-cache-dir --force-reinstall "numpy<2"
 
 WORKDIR /app/ClearerVoice-Studio/clearvoice
 
