@@ -91,3 +91,4 @@ config.yaml
 dataset/
 results/
 !input/elaf8sh_audio_part1.mp3
+!/home/margo/Desktop/speaker_separation/ClearerVoice-Studio/checkpoints
