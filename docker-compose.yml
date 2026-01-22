@@ -19,9 +19,6 @@ services:
     
     # Enable GPU access (NVIDIA)
     runtime: nvidia
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
     
     # Mount volumes for input/output
     volumes:
@@ -34,6 +31,7 @@ services:
     # Environment variables
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
       - HF_HOME=/app/.cache/huggingface
       - TORCH_HOME=/app/.cache/torch
     
