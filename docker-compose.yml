@@ -8,7 +8,7 @@
 #   docker-compose run separation -i /input/audio.wav -o /output/
 #
 # =============================================================================
-
+# work
 version: '3.8'
 
 services:
